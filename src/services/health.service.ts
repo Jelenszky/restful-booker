@@ -1,17 +1,14 @@
-import { APIRequestContext, APIResponse } from '@playwright/test';
+import { APIResponse } from '@playwright/test';
+import { BaseService } from './base.service';
+import { ErrorMessages } from '../../common/constants';
 
-export class HealthService {
-  constructor(
-    private baseURL: string,
-    private requestContext: APIRequestContext
-  ) {}
-
+export class HealthService extends BaseService {
   async ping(): Promise<APIResponse> {
     const response = await this.requestContext.get(`${this.baseURL}/ping`);
 
     if (!response.ok()) {
       throw new Error(
-        `Health check failed with status ${response.status()}: ${response.statusText()}`
+        `${ErrorMessages.HEALTH.FAILED} with status ${response.status()}: ${response.statusText()}`
       );
     }
 

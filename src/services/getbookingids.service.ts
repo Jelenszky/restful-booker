@@ -1,24 +1,13 @@
 import { APIResponse } from '@playwright/test';
 import { BaseService } from './base.service';
 import { ErrorMessages } from '../../common/constants';
-
-export interface GetBookingIdsParams {
-  firstname?: string;
-  lastname?: string;
-  checkin?: string; 
-  checkout?: string;
-}
-
-export interface BookingId {
-  bookingid: number;
-}
+import { BookingId, GetBookingIdsParams } from '../types';
 
 export class GetBookingIdsService extends BaseService {
-
   async getBookingIds(params?: GetBookingIdsParams): Promise<BookingId[]> {
     const queryString = this.buildQueryString(params);
     const url = `${this.baseURL}/booking${queryString}`;
-    
+
     const response = await this.requestContext.get(url);
 
     if (!response.ok()) {
@@ -30,11 +19,18 @@ export class GetBookingIdsService extends BaseService {
     return response.json() as Promise<BookingId[]>;
   }
 
+  async getBookingIdsResponse(params?: GetBookingIdsParams): Promise<APIResponse> {
+    const queryString = this.buildQueryString(params);
+    const url = `${this.baseURL}/booking${queryString}`;
+
+    return this.requestContext.get(url);
+  }
+
   private buildQueryString(params?: GetBookingIdsParams): string {
     if (!params) return '';
 
     const queryParams = new URLSearchParams();
-    
+
     if (params.firstname) queryParams.append('firstname', params.firstname);
     if (params.lastname) queryParams.append('lastname', params.lastname);
     if (params.checkin) queryParams.append('checkin', params.checkin);

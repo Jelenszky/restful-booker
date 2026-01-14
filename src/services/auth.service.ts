@@ -8,7 +8,7 @@ export interface AuthResponse {
 export class AuthService extends BaseService {
   async authenticate(username: string, password: string): Promise<string> {
     const response = await this.requestContext.post(`${this.baseURL}/auth`, {
-      data: { username, password }
+      data: { username, password },
     });
 
     if (!response.ok()) {
@@ -17,7 +17,7 @@ export class AuthService extends BaseService {
       );
     }
 
-    const { token } = await response.json() as AuthResponse;
+    const { token } = (await response.json()) as AuthResponse;
 
     if (!token) {
       throw new Error(ErrorMessages.AUTH.NO_TOKEN);

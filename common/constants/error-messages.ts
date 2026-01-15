@@ -9,6 +9,7 @@ export const ErrorMessages = {
   },
   BOOKING: {
     GET_IDS_FAILED: 'Failed to get booking IDs',
+    CREATE_FAILED: 'Failed to create booking',
     SCHEMA_INVALID: 'Schema validation error:',
     INTERNAL_SERVER_ERROR: 'Internal Server Error',
   },

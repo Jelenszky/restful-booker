@@ -12,10 +12,9 @@ API test automation framework for [Restful-Booker API](https://restful-booker.he
 src/services/       → Service layer (API abstractions extending BaseService)
 src/types/          → Zod schemas and TypeScript types (re-exported via index.ts)
 common/constants/   → HTTP status codes, error messages (re-exported via index.ts)
-common/utils/       → ServiceFactory for dependency injection
-common/fixtures.ts  → Playwright fixtures (serviceFactory, requestContext)
+common/utils/       → ServiceFactory + TestDataFactory
+common/fixtures.ts  → Worker-scoped Playwright fixtures
 tests/              → Playwright test specs
-tests/data/         → Test data files (e.g., getbookingids.data.ts)
 .auth/              → Token storage (token.json - gitignored)
 ```
 
@@ -24,12 +23,15 @@ tests/data/         → Test data files (e.g., getbookingids.data.ts)
 All services extend `BaseService` and are instantiated via `ServiceFactory`:
 
 ```typescript
-// ✅ Correct: Use ServiceFactory
-const factory = new ServiceFactory(baseURL, requestContext);
-const authService = factory.createAuthService();
+// ✅ Correct: Use fixtures in beforeAll
+let bookingService: GetBookingIdsService;
+
+test.beforeAll(({ serviceFactory }) => {
+  bookingService = serviceFactory.createGetBookingIdsService();
+});
 
 // ❌ Wrong: Direct instantiation
-const authService = new AuthService(baseURL, requestContext);
+const service = new GetBookingIdsService(baseURL, requestContext);
 ```
 
 ### Adding New Services
@@ -38,15 +40,45 @@ const authService = new AuthService(baseURL, requestContext);
 2. Add factory method in `common/utils/service.factory.ts`
 3. Add error messages to `common/constants/error-messages.ts`
 
+## Test Data with TestDataFactory
+
+**No hardcoded test data.** Use `TestDataFactory` (faker.js) via fixture:
+
 ```typescript
-// src/services/booking.service.ts
-export class BookingService extends BaseService {
-  async getBooking(id: number): Promise<Booking> {
-    const response = await this.requestContext.get(`${this.baseURL}/booking/${id}`);
-    // Always use ErrorMessages constants
-    if (!response.ok()) throw new Error(`${ErrorMessages.BOOKING.NOT_FOUND}`);
-    return response.json();
-  }
+import { TestDataFactory } from '../common/utils/testdata.factory';
+
+let testData: TestDataFactory;
+
+test.beforeAll(({ serviceFactory, testDataFactory }) => {
+  bookingService = serviceFactory.createGetBookingIdsService();
+  testData = testDataFactory;
+});
+
+test('example', async () => {
+  const booking = testData.createBookingTestData(); // Full booking
+  const params = testData.createFirstnameFilterTestData(); // Filter with firstname only
+});
+```
+
+### Factory Method Naming
+
+- All methods end with `TestData` suffix
+- Purpose-specific methods (not generic with overrides):
+  - `createBookingTestData()` - complete booking
+  - `createMinimalBookingTestData()` - without optional fields
+  - `createFirstnameFilterTestData()` - filter params with firstname only
+  - `createDateRangeFilterTestData()` - filter params with checkin/checkout
+
+### Parameterized Tests (Static Data)
+
+For parameterized tests at module load time, use static methods:
+
+```typescript
+// Static method - doesn't use faker, runs before fixtures available
+const invalidFormats = TestDataFactory.getInvalidDateFormatsTestData();
+
+for (const { description, params } of invalidFormats) {
+  test(`should fail for ${description}`, async () => { ... });
 }
 ```
 
@@ -54,50 +86,40 @@ export class BookingService extends BaseService {
 
 ### Imports
 
-- Use barrel exports: `import { HttpStatus, ErrorMessages } from '../common/constants'`
-- Use fixtures: `import { test, expect } from '../common/fixtures'`
+- Barrel exports: `import { HttpStatus, ErrorMessages } from '../common/constants'`
+- Fixtures: `import { test, expect } from '../common/fixtures'`
+- Types: `import { Booking, BookingWithIdSchema } from '../src/types'`
 
-### Test Structure (Using Fixtures)
-
-Tests use custom fixtures from `common/fixtures.ts` for automatic setup/cleanup:
+### Test Structure
 
 ```typescript
 import { test, expect } from '../common/fixtures';
-import { HttpStatus } from '../common/constants';
 
-test('should return 201 status when API is healthy', async ({ serviceFactory }) => {
-  const healthService = serviceFactory.createHealthService();
-  const response = await healthService.ping();
+let bookingService: CreateBookingService;
+let testData: TestDataFactory;
 
-  expect(response.status()).toBe(HttpStatus.CREATED);
+test.beforeAll(({ serviceFactory, testDataFactory }) => {
+  bookingService = serviceFactory.createCreateBookingService();
+  testData = testDataFactory;
+});
+
+test.describe('Feature - category', () => {
+  test('should do something', async () => {
+    const data = testData.createBookingTestData();
+    const result = await bookingService.createBooking(data);
+    expect(result.bookingid).toBeGreaterThan(0);
+  });
 });
 ```
 
 ### Schema Validation with Zod
 
-Use Zod schemas from `src/types/` for runtime response validation:
-
 ```typescript
-import { GetBookingIdsResponseSchema } from '../src/types';
+import { BookingWithIdSchema } from '../src/types';
 
-const bookings = await bookingService.getBookingIds();
-const result = GetBookingIdsResponseSchema.safeParse(bookings);
+const response = await bookingService.createBooking(data);
+const result = BookingWithIdSchema.safeParse(response);
 expect(result.success).toBeTruthy();
-```
-
-### Test Data Management
-
-Store test data in `tests/data/` folder, not inline in specs:
-
-```typescript
-// tests/data/getbookingids.data.ts
-export const validFilters = {
-  byFirstname: { firstname: 'John' } as GetBookingIdsParams,
-};
-
-// tests/getbookingids.spec.ts
-import { validFilters } from './data/getbookingids.data';
-const bookings = await service.getBookingIds(validFilters.byFirstname);
 ```
 
 ### Error Handling
@@ -105,55 +127,47 @@ const bookings = await service.getBookingIds(validFilters.byFirstname);
 - Always use `ErrorMessages` constants, never hardcoded strings
 - Services throw errors; tests catch and assert
 
-### Authentication
+## Authentication
 
-- Token stored in `.auth/token.json` via `auth.spec.ts` setup
-- Credentials from environment: `TEST_USER_USERNAME`, `TEST_USER_PASSWORD`
+Token-based auth setup runs before tests via `auth.spec.ts`:
+
+```typescript
+// Credentials from environment variables
+process.env.TEST_USER_USERNAME;
+process.env.TEST_USER_PASSWORD;
+
+// Token saved to .auth/token.json (gitignored)
+```
+
+- `AuthService.authenticate()` returns token string
+- Token file created automatically by auth setup test
+- Use `.env` file for local credentials
 
 ## Code Quality
 
 ### Pre-commit Hooks (Husky + lint-staged)
 
-Code is automatically linted and formatted on commit via `.husky/pre-commit`:
+Code is automatically linted and formatted on commit.
 
-- **TypeScript/JavaScript**: ESLint fix + Prettier format
-- **JSON/Markdown**: Prettier format only
+### ESLint Notes
 
-### ESLint Configuration
-
-[eslint.config.mjs](../eslint.config.mjs) uses flat config with:
-
-- `typescript-eslint` for TypeScript rules
+- `no-empty-pattern` disabled for `common/fixtures.ts` (Playwright requires `{}`)
 - `eslint-plugin-playwright` for test-specific rules
-- `eslint-config-prettier` to avoid conflicts
-
-**Note**: `no-empty-pattern` is disabled for `common/fixtures.ts` - Playwright fixtures require empty object destructuring `{}`.
-
-### Prettier Configuration
-
-[.prettierrc](../.prettierrc): single quotes, 2-space tabs, trailing commas, 100 char width.
 
 ## Commands
 
 ```bash
-# Testing
 npx playwright test                    # Run all tests
 npx playwright test health.spec.ts     # Run specific test
 npx playwright test --ui               # Interactive UI mode
-
-# Code Quality
-npm run lint                           # Check ESLint issues
 npm run lint:fix                       # Auto-fix ESLint issues
 npm run format                         # Format all files
-npm run format:check                   # Check formatting
+TEST_SEED=12345 npx playwright test    # Reproducible test data
 ```
 
 ## Key Files
 
-- [playwright.config.ts](../playwright.config.ts) - baseURL, test settings
-- [common/fixtures.ts](../common/fixtures.ts) - Custom Playwright fixtures
+- [common/fixtures.ts](../common/fixtures.ts) - Worker-scoped fixtures (serviceFactory, testDataFactory)
 - [common/utils/service.factory.ts](../common/utils/service.factory.ts) - Service instantiation
-- [src/services/base.service.ts](../src/services/base.service.ts) - Base class for all services
-- [src/types/booking.types.ts](../src/types/booking.types.ts) - Zod schemas example
-- [eslint.config.mjs](../eslint.config.mjs) - ESLint flat config
-- [.prettierrc](../.prettierrc) - Prettier formatting rules
+- [common/utils/testdata.factory.ts](../common/utils/testdata.factory.ts) - Dynamic test data generation
+- [src/types/booking.types.ts](../src/types/booking.types.ts) - Zod schemas

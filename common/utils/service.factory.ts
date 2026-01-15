@@ -2,6 +2,7 @@ import { APIRequestContext } from '@playwright/test';
 import { AuthService } from '../../src/services/auth.service';
 import { HealthService } from '../../src/services/health.service';
 import { GetBookingIdsService } from '../../src/services/getbookingids.service';
+import { CreateBookingService } from '../../src/services/createbooking.service';
 
 export class ServiceFactory {
   constructor(
@@ -19,5 +20,9 @@ export class ServiceFactory {
 
   createGetBookingIdsService(): GetBookingIdsService {
     return new GetBookingIdsService(this.baseURL, this.requestContext);
+  }
+
+  createCreateBookingService(): CreateBookingService {
+    return new CreateBookingService(this.baseURL, this.requestContext);
   }
 }

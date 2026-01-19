@@ -43,7 +43,6 @@ export class TestDataFactory {
         'Late checkout',
         'Early checkin',
         'Airport transfer',
-        undefined,
       ]),
       ...overrides,
     };
@@ -294,5 +293,12 @@ export class TestDataFactory {
     const booking = this.createBookingTestData();
     const { bookingdates: _, ...rest } = booking;
     return rest;
+  }
+
+  /**
+   * Generate a non-existent booking ID that is very unlikely to exist
+   */
+  getNonExistentBookingId(): number {
+    return this.faker.number.int({ min: 999999, max: 9999999 });
   }
 }

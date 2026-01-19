@@ -29,14 +29,11 @@ export class GetBookingIdsService extends BaseService {
   private buildQueryString(params?: GetBookingIdsParams): string {
     if (!params) return '';
 
-    const queryParams = new URLSearchParams();
+    const definedParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined)
+    );
 
-    if (params.firstname) queryParams.append('firstname', params.firstname);
-    if (params.lastname) queryParams.append('lastname', params.lastname);
-    if (params.checkin) queryParams.append('checkin', params.checkin);
-    if (params.checkout) queryParams.append('checkout', params.checkout);
-
-    const queryString = queryParams.toString();
+    const queryString = new URLSearchParams(definedParams).toString();
     return queryString ? `?${queryString}` : '';
   }
 }

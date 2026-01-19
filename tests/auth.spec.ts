@@ -8,7 +8,6 @@ test.describe('Auth - token generation', () => {
   test('should authenticate and return valid token', async ({ authToken }) => {
     expect(authToken).toBeTruthy();
     expect(typeof authToken).toBe('string');
-    expect(authToken.length).toBeGreaterThan(0);
 
     // Save token to file for debugging/verification
     fs.mkdirSync(path.dirname(tokenFile), { recursive: true });

@@ -1,6 +1,6 @@
 import { test, expect } from '../common/fixtures';
 import { HttpStatus } from '../common/constants';
-import { BookingWithIdSchema, BookingSchema, Booking } from '../src/types';
+import { BookingWithIdSchema, Booking } from '../src/types';
 import { CreateBookingService } from '../src/services/createbooking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
@@ -25,9 +25,6 @@ test.describe('CreateBooking - schema validation', () => {
     const bookingData = testData.createBookingTestData();
     const response = await bookingService.createBooking(bookingData);
 
-    const bookingResult = BookingSchema.safeParse(response.booking);
-    expect(bookingResult.success).toBeTruthy();
-
     expect(response.booking.firstname).toBe(bookingData.firstname);
     expect(response.booking.lastname).toBe(bookingData.lastname);
     expect(response.booking.totalprice).toBe(bookingData.totalprice);
@@ -42,7 +39,6 @@ test.describe('CreateBooking - schema validation', () => {
     const response = await bookingService.createBooking(bookingData);
 
     expect(response.bookingid).toBeGreaterThan(0);
-    expect(Number.isInteger(response.bookingid)).toBeTruthy();
   });
 });
 

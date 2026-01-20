@@ -158,7 +158,13 @@ export class BookingService extends BaseService {
 
   async cleanup(token: string): Promise<void> {
     for (const id of this.createdBookingIds) {
-      await this.deleteBooking(id, token);
+      try {
+        await this.deleteBooking(id, token);
+      } catch (error) {
+        console.warn(
+          `Failed to clean up booking, booking may have already been deleted ${id}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }
     this.createdBookingIds = [];
   }

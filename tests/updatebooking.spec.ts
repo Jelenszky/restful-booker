@@ -1,29 +1,30 @@
 import { test, expect } from '../common/fixtures';
 import { HttpStatus } from '../common/constants';
 import { BookingSchema, Booking } from '../src/types';
-import { UpdateBookingService } from '../src/services/updatebooking.service';
-import { CreateBookingService } from '../src/services/createbooking.service';
+import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
-let updateService: UpdateBookingService;
-let createService: CreateBookingService;
+let bookingService: BookingService;
 let testData: TestDataFactory;
 let authToken: string;
 
 test.beforeAll(({ serviceFactory, testDataFactory, authToken: token }) => {
-  updateService = serviceFactory.createUpdateBookingService();
-  createService = serviceFactory.createCreateBookingService();
+  bookingService = serviceFactory.createBookingService();
   testData = testDataFactory;
   authToken = token;
+});
+
+test.afterAll(async () => {
+  await bookingService.cleanup(authToken);
 });
 
 test.describe('UpdateBooking - schema validation', () => {
   test('should return valid schema for updated booking', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -35,10 +36,10 @@ test.describe('UpdateBooking - schema validation', () => {
 
   test('should return booking object matching updated data', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -57,10 +58,10 @@ test.describe('UpdateBooking - schema validation', () => {
 test.describe('UpdateBooking - valid updates', () => {
   test('should update all fields of a booking', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBookingResponse(
+    const response = await bookingService.updateBookingResponse(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -71,7 +72,7 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking firstname and lastname only', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData({
       totalprice: bookingData.totalprice,
@@ -79,7 +80,7 @@ test.describe('UpdateBooking - valid updates', () => {
       bookingdates: bookingData.bookingdates,
       additionalneeds: bookingData.additionalneeds,
     });
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -91,10 +92,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking totalprice', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -105,10 +106,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking depositpaid status', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData({ depositpaid: !bookingData.depositpaid });
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -119,11 +120,11 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking dates', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedDates = testData.createBookingDatesTestData();
     const updatedData = testData.createBookingTestData({ bookingdates: updatedDates });
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -135,10 +136,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update additionalneeds', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -149,10 +150,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking to zero price', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createZeroPriceBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -163,10 +164,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking with special characters in name', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createSpecialCharsBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -178,10 +179,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking with unicode characters in name', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createUnicodeNameBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -193,10 +194,10 @@ test.describe('UpdateBooking - valid updates', () => {
 
   test('should update booking with empty additionalneeds', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createEmptyNeedsBookingTestData();
-    const response = await updateService.updateBooking(
+    const response = await bookingService.updateBooking(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -209,10 +210,10 @@ test.describe('UpdateBooking - valid updates', () => {
 test.describe('UpdateBooking - invalid requests', () => {
   test('should return 403 without authentication token', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBookingResponse(
+    const response = await bookingService.updateBookingResponse(
       createdBooking.bookingid,
       updatedData,
       ''
@@ -223,10 +224,10 @@ test.describe('UpdateBooking - invalid requests', () => {
 
   test('should return 400 for missing firstname', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createMissingFirstnameBookingTestData() as unknown as Booking;
-    const response = await updateService.updateBookingResponse(
+    const response = await bookingService.updateBookingResponse(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -237,10 +238,10 @@ test.describe('UpdateBooking - invalid requests', () => {
 
   test('should return 400 for missing lastname', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createMissingLastnameBookingTestData() as unknown as Booking;
-    const response = await updateService.updateBookingResponse(
+    const response = await bookingService.updateBookingResponse(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -251,10 +252,10 @@ test.describe('UpdateBooking - invalid requests', () => {
 
   test('should return 400 for missing bookingdates', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const updatedData = testData.createMissingDatesBookingTestData() as unknown as Booking;
-    const response = await updateService.updateBookingResponse(
+    const response = await bookingService.updateBookingResponse(
       createdBooking.bookingid,
       updatedData,
       authToken
@@ -266,7 +267,7 @@ test.describe('UpdateBooking - invalid requests', () => {
   test('should return 405 for non-existent booking', async () => {
     const nonExistentBookingId = testData.getNonExistentBookingId();
     const updatedData = testData.createBookingTestData();
-    const response = await updateService.updateBookingResponse(
+    const response = await bookingService.updateBookingResponse(
       nonExistentBookingId,
       updatedData,
       authToken

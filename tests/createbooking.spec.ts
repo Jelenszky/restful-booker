@@ -1,15 +1,21 @@
 import { test, expect } from '../common/fixtures';
 import { HttpStatus } from '../common/constants';
 import { BookingWithIdSchema, Booking } from '../src/types';
-import { CreateBookingService } from '../src/services/createbooking.service';
+import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
-let bookingService: CreateBookingService;
+let bookingService: BookingService;
 let testData: TestDataFactory;
+let authToken: string;
 
-test.beforeAll(({ serviceFactory, testDataFactory }) => {
-  bookingService = serviceFactory.createCreateBookingService();
+test.beforeAll(({ serviceFactory, testDataFactory, authToken: token }) => {
+  bookingService = serviceFactory.createBookingService();
   testData = testDataFactory;
+  authToken = token;
+});
+
+test.afterAll(async () => {
+  await bookingService.cleanup(authToken);
 });
 
 test.describe('CreateBooking - schema validation', () => {
@@ -45,9 +51,9 @@ test.describe('CreateBooking - schema validation', () => {
 test.describe('CreateBooking - valid bookings', () => {
   test('should create booking with all fields', async () => {
     const bookingData = testData.createBookingTestData();
-    const response = await bookingService.createBookingResponse(bookingData);
+    const response = await bookingService.createBooking(bookingData);
 
-    expect(response.status()).toBe(HttpStatus.OK);
+    expect(response.bookingid).toBeGreaterThan(0);
   });
 
   test('should create booking without additionalneeds', async () => {

@@ -21,18 +21,18 @@ tests/              → Playwright test specs
 
 ### Service Layer Pattern
 
-All services extend `BaseService` and are instantiated via `ServiceFactory`:
+All services extend `BaseService` and are instantiated via `ServiceFactory`. **Current services are consolidated**: `BookingService` handles all booking operations (GET, CREATE, UPDATE, PATCH, DELETE) to avoid duplication.
 
 ```typescript
 // ✅ Correct: Use fixtures in beforeAll
-let bookingService: GetBookingIdsService;
+let bookingService: BookingService;
 
 test.beforeAll(({ serviceFactory }) => {
-  bookingService = serviceFactory.createGetBookingIdsService();
+  bookingService = serviceFactory.createBookingService();
 });
 
 // ❌ Wrong: Direct instantiation
-const service = new GetBookingIdsService(baseURL, requestContext);
+const service = new BookingService(baseURL, requestContext);
 ```
 
 ### Adding New Services
@@ -40,6 +40,17 @@ const service = new GetBookingIdsService(baseURL, requestContext);
 1. Create service in `src/services/` extending `BaseService`
 2. Add factory method in `common/utils/service.factory.ts`
 3. Add error messages to `common/constants/error-messages.ts`
+
+### Consolidated BookingService
+
+All booking CRUD operations in one service. Methods return either parsed data or raw `APIResponse`:
+
+- `getBookingIds(params?)` / `getBookingIdsResponse()` - GET /booking
+- `createBooking(data)` / `createBookingResponse()` - POST /booking (auto-tracks ID for cleanup)
+- `updateBooking(id, data, token)` / `updateBookingResponse()` - PUT /booking/:id
+- `partialUpdateBooking(id, data, token)` / `partialUpdateBookingResponse()` - PATCH /booking/:id
+- `deleteBooking(id, token)` / `deleteBookingResponse()` - DELETE /booking/:id
+- `cleanup(token)` - Deletes all tracked bookings (see Cleanup Pattern below)
 
 ## Test Data with TestDataFactory
 
@@ -49,7 +60,7 @@ const service = new GetBookingIdsService(baseURL, requestContext);
 let testData: TestDataFactory;
 
 test.beforeAll(({ serviceFactory, testDataFactory }) => {
-  bookingService = serviceFactory.createGetBookingIdsService();
+  bookingService = serviceFactory.createBookingService();
   testData = testDataFactory;
 });
 
@@ -94,12 +105,18 @@ for (const { description, params } of invalidFormats) {
 ```typescript
 import { test, expect } from '../common/fixtures';
 
-let bookingService: CreateBookingService;
+let bookingService: BookingService;
 let testData: TestDataFactory;
+let authToken: string;
 
-test.beforeAll(({ serviceFactory, testDataFactory }) => {
-  bookingService = serviceFactory.createCreateBookingService();
+test.beforeAll(({ serviceFactory, testDataFactory, authToken: token }) => {
+  bookingService = serviceFactory.createBookingService();
   testData = testDataFactory;
+  authToken = token;
+});
+
+test.afterAll(async () => {
+  await bookingService.cleanup(authToken); // Auto-deletes tracked bookings
 });
 
 test.describe('Feature - category', () => {
@@ -126,21 +143,57 @@ expect(result.success).toBeTruthy();
 - Always use `ErrorMessages` constants, never hardcoded strings
 - Services throw errors; tests catch and assert
 
+## Cleanup Pattern (Auto-tracking)
+
+**Problem solved**: Shared public API means test cleanup must only delete bookings created by current worker.
+
+**Solution**: `BookingService` auto-tracks created booking IDs internally:
+
+```typescript
+// In your test file - NO manual tracking needed
+test.beforeAll(({ serviceFactory, authToken }) => {
+  bookingService = serviceFactory.createBookingService();
+});
+
+test.afterAll(async () => {
+  await bookingService.cleanup(authToken); // Deletes only bookings created by this worker
+});
+
+test('example', async () => {
+  const booking = testData.createBookingTestData();
+  const created = await bookingService.createBooking(booking); // ID auto-tracked
+  // ... test ...
+  // cleanup() will delete this booking after all tests in worker complete
+});
+```
+
+**How it works**:
+
+- `createBooking()` automatically calls `this.createdBookingIds.push(result.bookingid)`
+- `cleanup()` deletes tracked IDs sequentially to avoid rate limiting
+- Each worker gets its own BookingService instance with isolated tracking
+- NO need for manual `createdBookingIds` array in test files
+
 ## Authentication
 
 Token-based auth available as worker-scoped fixture:
 
 ```typescript
-// Use authToken fixture for authenticated requests (future update/delete tests)
+// Use authToken fixture for authenticated requests (update/delete tests)
 test.beforeAll(({ serviceFactory, authToken }) => {
-  updateService = serviceFactory.createUpdateBookingService();
+  bookingService = serviceFactory.createBookingService();
   token = authToken;
+});
+
+test('example', async () => {
+  await bookingService.updateBooking(bookingId, updatedData, token);
+  await bookingService.deleteBooking(bookingId, token);
 });
 ```
 
-- `authToken` fixture authenticates once per worker, caches token
+- `authToken` fixture authenticates once per worker, caches token in `.auth/token.json`
 - Credentials from environment: `TEST_USER_USERNAME`, `TEST_USER_PASSWORD`
-- Use `.env` file for local credentials
+- Use `.env` file for local credentials (create from template if needed)
 - In CI: Set as GitHub repository secrets
 
 ## Reporting & CI/CD

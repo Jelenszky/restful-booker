@@ -1,14 +1,14 @@
 import { test, expect } from '../common/fixtures';
 import { ErrorMessages, HttpStatus } from '../common/constants';
 import { GetBookingIdsResponseSchema, BookingIdSchema } from '../src/types';
-import { GetBookingIdsService } from '../src/services/getbookingids.service';
+import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
-let bookingService: GetBookingIdsService;
+let bookingService: BookingService;
 let testData: TestDataFactory;
 
 test.beforeAll(({ serviceFactory, testDataFactory }) => {
-  bookingService = serviceFactory.createGetBookingIdsService();
+  bookingService = serviceFactory.createBookingService();
   testData = testDataFactory;
 });
 

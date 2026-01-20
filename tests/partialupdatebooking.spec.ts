@@ -1,29 +1,30 @@
 import { test, expect } from '../common/fixtures';
 import { HttpStatus } from '../common/constants';
 import { BookingSchema } from '../src/types';
-import { PartialUpdateBookingService } from '../src/services/partialupdatebooking.service';
-import { CreateBookingService } from '../src/services/createbooking.service';
+import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
-let partialUpdateService: PartialUpdateBookingService;
-let createService: CreateBookingService;
+let bookingService: BookingService;
 let testData: TestDataFactory;
 let authToken: string;
 
 test.beforeAll(({ serviceFactory, testDataFactory, authToken: token }) => {
-  partialUpdateService = serviceFactory.createPartialUpdateBookingService();
-  createService = serviceFactory.createCreateBookingService();
+  bookingService = serviceFactory.createBookingService();
   testData = testDataFactory;
   authToken = token;
+});
+
+test.afterAll(async () => {
+  await bookingService.cleanup(authToken);
 });
 
 test.describe('PartialUpdateBooking - schema validation', () => {
   test('should return valid schema for partial updated booking', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const partialData = { firstname: testData.createBookingTestData().firstname };
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       partialData,
       authToken
@@ -35,10 +36,10 @@ test.describe('PartialUpdateBooking - schema validation', () => {
 
   test('should return full booking object after partial update', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const partialData = { firstname: testData.createBookingTestData().firstname };
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       partialData,
       authToken
@@ -55,10 +56,10 @@ test.describe('PartialUpdateBooking - schema validation', () => {
 test.describe('PartialUpdateBooking - single field updates', () => {
   test('should update only firstname', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const newFirstname = testData.createBookingTestData().firstname;
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       { firstname: newFirstname },
       authToken
@@ -71,10 +72,10 @@ test.describe('PartialUpdateBooking - single field updates', () => {
 
   test('should update only totalprice', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const newPrice = testData.createBookingTestData().totalprice;
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       { totalprice: newPrice },
       authToken
@@ -87,10 +88,10 @@ test.describe('PartialUpdateBooking - single field updates', () => {
 
   test('should update only depositpaid', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const newDepositPaid = !bookingData.depositpaid;
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       { depositpaid: newDepositPaid },
       authToken
@@ -103,10 +104,10 @@ test.describe('PartialUpdateBooking - single field updates', () => {
 
   test('should update only checkin date', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const newDates = testData.createBookingDatesTestData();
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       { bookingdates: { checkin: newDates.checkin, checkout: bookingData.bookingdates.checkout } },
       authToken
@@ -118,10 +119,10 @@ test.describe('PartialUpdateBooking - single field updates', () => {
 
   test('should update only additionalneeds', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const newNeeds = testData.createBookingTestData().additionalneeds;
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       { additionalneeds: newNeeds },
       authToken
@@ -135,10 +136,10 @@ test.describe('PartialUpdateBooking - single field updates', () => {
 test.describe('PartialUpdateBooking - multiple field updates', () => {
   test('should update firstname and lastname', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
     const newData = testData.createBookingTestData();
-    const response = await partialUpdateService.partialUpdateBooking(
+    const response = await bookingService.partialUpdateBooking(
       createdBooking.bookingid,
       { firstname: newData.firstname, lastname: newData.lastname },
       authToken
@@ -153,9 +154,9 @@ test.describe('PartialUpdateBooking - multiple field updates', () => {
 test.describe('PartialUpdateBooking - invalid requests', () => {
   test('should return 403 without authentication token', async () => {
     const bookingData = testData.createBookingTestData();
-    const createdBooking = await createService.createBooking(bookingData);
+    const createdBooking = await bookingService.createBooking(bookingData);
 
-    const response = await partialUpdateService.partialUpdateBookingResponse(
+    const response = await bookingService.partialUpdateBookingResponse(
       createdBooking.bookingid,
       { firstname: testData.createBookingTestData().firstname },
       ''
@@ -165,8 +166,8 @@ test.describe('PartialUpdateBooking - invalid requests', () => {
   });
 
   test('should return 405 for non-existent booking', async () => {
-    const nonExistentBookingId = testData.getNonExistentBookingId();
-    const response = await partialUpdateService.partialUpdateBookingResponse(
+    const nonExistentBookingId = 999999;
+    const response = await bookingService.partialUpdateBookingResponse(
       nonExistentBookingId,
       { firstname: testData.createBookingTestData().firstname },
       authToken

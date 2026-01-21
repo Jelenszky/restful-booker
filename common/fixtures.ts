@@ -1,13 +1,13 @@
 import { test as base, request, APIRequestContext } from '@playwright/test';
 import { ServiceFactory } from '../common/utils/service.factory';
 import { TestDataFactory } from '../common/utils/testdata.factory';
-import { ErrorMessages } from '../common/constants';
+import { ErrorMessages } from '../common/constants/error-messages';
 import config from '../playwright.config';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const baseURL = config.use?.baseURL ?? 'https://restful-booker.herokuapp.com';
+const baseURL = config.use?.baseURL;
 
 interface WorkerFixtures {
   serviceFactory: ServiceFactory;
@@ -28,7 +28,7 @@ export const test = base.extend<object, WorkerFixtures>({
 
   serviceFactory: [
     async ({ requestContext }, use) => {
-      const serviceFactory = new ServiceFactory(baseURL, requestContext);
+      const serviceFactory = new ServiceFactory(baseURL!, requestContext);
       await use(serviceFactory);
     },
     { scope: 'worker' },

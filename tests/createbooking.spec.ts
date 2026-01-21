@@ -1,6 +1,6 @@
 import { test, expect } from '../common/fixtures';
-import { HttpStatus } from '../common/constants';
-import { BookingWithIdSchema, Booking } from '../src/types';
+import { BookingWithIdSchema, Booking } from '../src/types/booking.types';
+import { StatusCodes } from 'http-status-codes';
 import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
@@ -24,27 +24,7 @@ test.describe('CreateBooking - schema validation', () => {
     const response = await bookingService.createBooking(bookingData);
 
     const result = BookingWithIdSchema.safeParse(response);
-    expect(result.success).toBeTruthy();
-  });
-
-  test('should return booking object matching request data', async () => {
-    const bookingData = testData.createBookingTestData();
-    const response = await bookingService.createBooking(bookingData);
-
-    expect(response.booking.firstname).toBe(bookingData.firstname);
-    expect(response.booking.lastname).toBe(bookingData.lastname);
-    expect(response.booking.totalprice).toBe(bookingData.totalprice);
-    expect(response.booking.depositpaid).toBe(bookingData.depositpaid);
-    expect(response.booking.bookingdates.checkin).toBe(bookingData.bookingdates.checkin);
-    expect(response.booking.bookingdates.checkout).toBe(bookingData.bookingdates.checkout);
-    expect(response.booking.additionalneeds).toBe(bookingData.additionalneeds);
-  });
-
-  test('should return positive integer bookingid', async () => {
-    const bookingData = testData.createBookingTestData();
-    const response = await bookingService.createBooking(bookingData);
-
-    expect(response.bookingid).toBeGreaterThan(0);
+    expect(result.success).toBe(true);
   });
 });
 
@@ -54,6 +34,13 @@ test.describe('CreateBooking - valid bookings', () => {
     const response = await bookingService.createBooking(bookingData);
 
     expect(response.bookingid).toBeGreaterThan(0);
+    expect(response.booking.firstname).toBe(bookingData.firstname);
+    expect(response.booking.lastname).toBe(bookingData.lastname);
+    expect(response.booking.totalprice).toBe(bookingData.totalprice);
+    expect(response.booking.depositpaid).toBe(bookingData.depositpaid);
+    expect(response.booking.bookingdates.checkin).toBe(bookingData.bookingdates.checkin);
+    expect(response.booking.bookingdates.checkout).toBe(bookingData.bookingdates.checkout);
+    expect(response.booking.additionalneeds).toBe(bookingData.additionalneeds);
   });
 
   test('should create booking without additionalneeds', async () => {
@@ -115,26 +102,26 @@ test.describe('CreateBooking - invalid requests', () => {
     const bookingData = testData.createMissingFirstnameBookingTestData() as unknown as Booking;
     const response = await bookingService.createBookingResponse(bookingData);
 
-    expect(response.status()).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(response.status()).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
 
   test('should return 500 for missing lastname', async () => {
     const bookingData = testData.createMissingLastnameBookingTestData() as unknown as Booking;
     const response = await bookingService.createBookingResponse(bookingData);
 
-    expect(response.status()).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(response.status()).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
 
   test('should return 500 for missing bookingdates', async () => {
     const bookingData = testData.createMissingDatesBookingTestData() as unknown as Booking;
     const response = await bookingService.createBookingResponse(bookingData);
 
-    expect(response.status()).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(response.status()).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
 
   test('should return 500 for empty request body', async () => {
     const response = await bookingService.createBookingResponse({} as unknown as Booking);
 
-    expect(response.status()).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(response.status()).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
   });
 });

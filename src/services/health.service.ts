@@ -1,6 +1,6 @@
 import { APIResponse } from '@playwright/test';
 import { BaseService } from './base.service';
-import { ErrorMessages } from '../../common/constants';
+import { ErrorMessages } from '../../common/constants/error-messages';
 
 export class HealthService extends BaseService {
   async ping(): Promise<APIResponse> {

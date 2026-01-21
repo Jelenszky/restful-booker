@@ -1,6 +1,6 @@
 import { test, expect } from '../common/fixtures';
-import { HttpStatus } from '../common/constants';
-import { BookingSchema } from '../src/types';
+import { StatusCodes } from 'http-status-codes';
+import { BookingSchema } from '../src/types/booking.types';
 import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
@@ -31,7 +31,7 @@ test.describe('PartialUpdateBooking - schema validation', () => {
     );
 
     const result = BookingSchema.safeParse(response);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should return full booking object after partial update', async () => {
@@ -162,7 +162,7 @@ test.describe('PartialUpdateBooking - invalid requests', () => {
       ''
     );
 
-    expect(response.status()).toBe(HttpStatus.FORBIDDEN);
+    expect(response.status()).toBe(StatusCodes.FORBIDDEN);
   });
 
   test('should return 405 for non-existent booking', async () => {
@@ -173,6 +173,6 @@ test.describe('PartialUpdateBooking - invalid requests', () => {
       authToken
     );
 
-    expect([HttpStatus.NOT_FOUND, HttpStatus.METHOD_NOT_ALLOWED]).toContain(response.status());
+    expect([StatusCodes.NOT_FOUND, StatusCodes.METHOD_NOT_ALLOWED]).toContain(response.status());
   });
 });

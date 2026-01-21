@@ -1,6 +1,7 @@
 import { test, expect } from '../common/fixtures';
-import { ErrorMessages, HttpStatus } from '../common/constants';
-import { GetBookingIdsResponseSchema, BookingIdSchema } from '../src/types';
+import { ErrorMessages } from '../common/constants/error-messages';
+import { StatusCodes } from 'http-status-codes';
+import { GetBookingIdsResponseSchema, BookingIdSchema } from '../src/types/booking.types';
 import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
@@ -17,7 +18,7 @@ test.describe('GetBookingIds - schema validation', () => {
     const bookings = await bookingService.getBookingIds();
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should return array with valid bookingid numbers', async () => {
@@ -27,7 +28,7 @@ test.describe('GetBookingIds - schema validation', () => {
 
     bookings.forEach((booking, index) => {
       const result = BookingIdSchema.safeParse(booking);
-      expect(result.success, `Booking at index ${index} failed schema validation`).toBeTruthy();
+      expect(result.success, `Booking at index ${index} failed schema validation`).toBe(true);
       expect(booking.bookingid).toBeGreaterThan(0);
       expect(Number.isInteger(booking.bookingid)).toBeTruthy();
     });
@@ -40,7 +41,7 @@ test.describe('GetBookingIds - filtering by name', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should filter bookings by lastname', async () => {
@@ -48,7 +49,7 @@ test.describe('GetBookingIds - filtering by name', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should filter bookings by firstname and lastname', async () => {
@@ -56,7 +57,7 @@ test.describe('GetBookingIds - filtering by name', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 });
 
@@ -66,7 +67,7 @@ test.describe('GetBookingIds - filtering by date', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should filter bookings by checkout date', async () => {
@@ -74,7 +75,7 @@ test.describe('GetBookingIds - filtering by date', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should filter bookings by date range', async () => {
@@ -82,7 +83,7 @@ test.describe('GetBookingIds - filtering by date', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 });
 
@@ -92,7 +93,7 @@ test.describe('GetBookingIds - combined filters', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 });
 
@@ -103,7 +104,7 @@ test.describe('GetBookingIds - negative scenarios (invalid date formats)', () =>
     test(`should return error for ${description}`, async () => {
       const response = await bookingService.getBookingIdsResponse(params);
 
-      expect(response.status()).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(response.status()).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(await response.text()).toContain(ErrorMessages.BOOKING.INTERNAL_SERVER_ERROR);
     });
   }
@@ -115,7 +116,7 @@ test.describe('GetBookingIds - edge cases', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should handle future date far in advance', async () => {
@@ -123,7 +124,7 @@ test.describe('GetBookingIds - edge cases', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should handle special characters in name filter', async () => {
@@ -131,7 +132,7 @@ test.describe('GetBookingIds - edge cases', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
   test('should handle unicode characters in name filter', async () => {
@@ -139,6 +140,6 @@ test.describe('GetBookingIds - edge cases', () => {
     const bookings = await bookingService.getBookingIds(params);
 
     const result = GetBookingIdsResponseSchema.safeParse(bookings);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 });

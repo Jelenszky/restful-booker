@@ -1,5 +1,5 @@
 import { test, expect } from '../common/fixtures';
-import { HttpStatus } from '../common/constants';
+import { StatusCodes } from 'http-status-codes';
 import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
@@ -27,7 +27,7 @@ test.describe('DeleteBooking - successful deletion', () => {
       authToken
     );
 
-    expect(response.status()).toBe(HttpStatus.CREATED);
+    expect(response.status()).toBe(StatusCodes.CREATED);
   });
 
   test('should remove booking from bookings list', async () => {
@@ -39,6 +39,8 @@ test.describe('DeleteBooking - successful deletion', () => {
       (b) => b.bookingid === createdBooking.bookingid
     );
 
+    expect(bookingExistsBefore).toBeTruthy();
+
     await bookingService.deleteBooking(createdBooking.bookingid, authToken);
 
     const allBookingsAfterDelete = await bookingService.getBookingIds();
@@ -46,7 +48,6 @@ test.describe('DeleteBooking - successful deletion', () => {
       (b) => b.bookingid === createdBooking.bookingid
     );
 
-    expect(bookingExistsBefore).toBeTruthy();
     expect(bookingExistsAfter).toBeFalsy();
   });
 });
@@ -58,7 +59,7 @@ test.describe('DeleteBooking - authentication errors', () => {
 
     const response = await bookingService.deleteBookingResponse(createdBooking.bookingid, '');
 
-    expect(response.status()).toBe(HttpStatus.FORBIDDEN);
+    expect(response.status()).toBe(StatusCodes.FORBIDDEN);
   });
 
   test('should return 403 with invalid token', async () => {
@@ -70,7 +71,7 @@ test.describe('DeleteBooking - authentication errors', () => {
       'invalid-token'
     );
 
-    expect(response.status()).toBe(HttpStatus.FORBIDDEN);
+    expect(response.status()).toBe(StatusCodes.FORBIDDEN);
   });
 });
 
@@ -79,7 +80,7 @@ test.describe('DeleteBooking - invalid requests', () => {
     const nonExistentBookingId = testData.getNonExistentBookingId();
     const response = await bookingService.deleteBookingResponse(nonExistentBookingId, authToken);
 
-    expect([HttpStatus.NOT_FOUND, HttpStatus.METHOD_NOT_ALLOWED]).toContain(response.status());
+    expect([StatusCodes.NOT_FOUND, StatusCodes.METHOD_NOT_ALLOWED]).toContain(response.status());
   });
 
   test('should return error when deleting already deleted booking', async () => {
@@ -93,6 +94,6 @@ test.describe('DeleteBooking - invalid requests', () => {
       authToken
     );
 
-    expect([HttpStatus.NOT_FOUND, HttpStatus.METHOD_NOT_ALLOWED]).toContain(response.status());
+    expect([StatusCodes.NOT_FOUND, StatusCodes.METHOD_NOT_ALLOWED]).toContain(response.status());
   });
 });

@@ -44,6 +44,7 @@ export default tseslint.config(
       'playwright-report/',
       'test-results/',
       '.auth/',
+      'allure-report/',
       '*.config.js',
       '*.config.mjs',
     ],

@@ -1,10 +1,18 @@
 import { APIResponse } from '@playwright/test';
 import { BaseService } from './base.service';
-import { ErrorMessages } from '../../common/constants';
+import { ErrorMessages } from '../../common/constants/error-messages';
 import { Booking, BookingWithId, BookingId, GetBookingIdsParams } from '../types';
 
 export class BookingService extends BaseService {
   private createdBookingIds: number[] = [];
+
+  private getHeaders(token?: string): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Cookie'] = `token=${token}`;
+    }
+    return headers;
+  }
 
   async getBookingIds(params?: GetBookingIdsParams): Promise<BookingId[]> {
     const queryString = this.buildQueryString(params);
@@ -31,10 +39,6 @@ export class BookingService extends BaseService {
   async createBooking(booking: Booking): Promise<BookingWithId> {
     const response = await this.requestContext.post(`${this.baseURL}/booking`, {
       data: booking,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
     });
 
     if (!response.ok()) {
@@ -51,21 +55,13 @@ export class BookingService extends BaseService {
   async createBookingResponse(booking: Booking): Promise<APIResponse> {
     return this.requestContext.post(`${this.baseURL}/booking`, {
       data: booking,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
     });
   }
 
   async updateBooking(bookingId: number, booking: Booking, token: string): Promise<Booking> {
     const response = await this.requestContext.put(`${this.baseURL}/booking/${bookingId}`, {
       data: booking,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Cookie: `token=${token}`,
-      },
+      headers: this.getHeaders(token),
     });
 
     if (!response.ok()) {
@@ -84,11 +80,7 @@ export class BookingService extends BaseService {
   ): Promise<APIResponse> {
     return this.requestContext.put(`${this.baseURL}/booking/${bookingId}`, {
       data: booking,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Cookie: `token=${token}`,
-      },
+      headers: this.getHeaders(token),
     });
   }
 
@@ -99,11 +91,7 @@ export class BookingService extends BaseService {
   ): Promise<Booking> {
     const response = await this.requestContext.patch(`${this.baseURL}/booking/${bookingId}`, {
       data: partialBooking,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Cookie: `token=${token}`,
-      },
+      headers: this.getHeaders(token),
     });
 
     if (!response.ok()) {
@@ -122,20 +110,13 @@ export class BookingService extends BaseService {
   ): Promise<APIResponse> {
     return this.requestContext.patch(`${this.baseURL}/booking/${bookingId}`, {
       data: partialBooking,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Cookie: `token=${token}`,
-      },
+      headers: this.getHeaders(token),
     });
   }
 
   async deleteBooking(bookingId: number, token: string): Promise<string> {
     const response = await this.requestContext.delete(`${this.baseURL}/booking/${bookingId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: `token=${token}`,
-      },
+      headers: this.getHeaders(token),
     });
 
     if (!response.ok()) {
@@ -149,10 +130,7 @@ export class BookingService extends BaseService {
 
   async deleteBookingResponse(bookingId: number, token: string): Promise<APIResponse> {
     return this.requestContext.delete(`${this.baseURL}/booking/${bookingId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: `token=${token}`,
-      },
+      headers: this.getHeaders(token),
     });
   }
 

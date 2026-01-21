@@ -1,5 +1,5 @@
 import { BaseService } from './base.service';
-import { ErrorMessages } from '../../common/constants';
+import { ErrorMessages } from '../../common/constants/error-messages';
 
 export interface AuthResponse {
   token: string;

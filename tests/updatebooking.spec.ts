@@ -1,6 +1,6 @@
 import { test, expect } from '../common/fixtures';
-import { HttpStatus } from '../common/constants';
-import { BookingSchema, Booking } from '../src/types';
+import { StatusCodes } from 'http-status-codes';
+import { BookingSchema, Booking } from '../src/types/booking.types';
 import { BookingService } from '../src/services/booking.service';
 import { TestDataFactory } from '../common/utils/testdata.factory';
 
@@ -31,10 +31,10 @@ test.describe('UpdateBooking - schema validation', () => {
     );
 
     const result = BookingSchema.safeParse(response);
-    expect(result.success).toBeTruthy();
+    expect(result.success).toBe(true);
   });
 
-  test('should return booking object matching updated data', async () => {
+  test('should return booking object matching updated data after updating all fields', async () => {
     const bookingData = testData.createBookingTestData();
     const createdBooking = await bookingService.createBooking(bookingData);
 
@@ -56,7 +56,7 @@ test.describe('UpdateBooking - schema validation', () => {
 });
 
 test.describe('UpdateBooking - valid updates', () => {
-  test('should update all fields of a booking', async () => {
+  test('should return 200 after succesful update of fields', async () => {
     const bookingData = testData.createBookingTestData();
     const createdBooking = await bookingService.createBooking(bookingData);
 
@@ -67,7 +67,7 @@ test.describe('UpdateBooking - valid updates', () => {
       authToken
     );
 
-    expect(response.status()).toBe(HttpStatus.OK);
+    expect(response.status()).toBe(StatusCodes.OK);
   });
 
   test('should update booking firstname and lastname only', async () => {
@@ -219,7 +219,7 @@ test.describe('UpdateBooking - invalid requests', () => {
       ''
     );
 
-    expect(response.status()).toBe(HttpStatus.FORBIDDEN);
+    expect(response.status()).toBe(StatusCodes.FORBIDDEN);
   });
 
   test('should return 400 for missing firstname', async () => {
@@ -233,7 +233,7 @@ test.describe('UpdateBooking - invalid requests', () => {
       authToken
     );
 
-    expect(response.status()).toBe(HttpStatus.BAD_REQUEST);
+    expect(response.status()).toBe(StatusCodes.BAD_REQUEST);
   });
 
   test('should return 400 for missing lastname', async () => {
@@ -247,7 +247,7 @@ test.describe('UpdateBooking - invalid requests', () => {
       authToken
     );
 
-    expect(response.status()).toBe(HttpStatus.BAD_REQUEST);
+    expect(response.status()).toBe(StatusCodes.BAD_REQUEST);
   });
 
   test('should return 400 for missing bookingdates', async () => {
@@ -261,7 +261,7 @@ test.describe('UpdateBooking - invalid requests', () => {
       authToken
     );
 
-    expect(response.status()).toBe(HttpStatus.BAD_REQUEST);
+    expect(response.status()).toBe(StatusCodes.BAD_REQUEST);
   });
 
   test('should return 405 for non-existent booking', async () => {
@@ -273,6 +273,6 @@ test.describe('UpdateBooking - invalid requests', () => {
       authToken
     );
 
-    expect([HttpStatus.NOT_FOUND, HttpStatus.METHOD_NOT_ALLOWED]).toContain(response.status());
+    expect([StatusCodes.NOT_FOUND, StatusCodes.METHOD_NOT_ALLOWED]).toContain(response.status());
   });
 });
